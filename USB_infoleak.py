@@ -2,13 +2,15 @@
 # -*- coding: utf-8 -*-
 # -*- coding: cp949 -*-
 
+# @Author : L3ad0xFF
+
 from winreg import *
 import sys
 import os
 import platform
 import pyevtx
-import wmi
 
+# ==> * Registry Parsing Area *
 def D_classes() : 
     global d_class_id, d_unique_instance_id, search4log
     varSubkey = "SYSTEM" # 서브레지스트리 목록 지정
@@ -241,6 +243,7 @@ def VolumeName() :
         CloseKey(varKey)
         CloseKey(varReg)
 
+# ==> * Find Install time from setupapi.dev.log Area *
 def setupdevlog() :
 	global initcontime, recentcontime
 	initcontime = list()
@@ -255,6 +258,7 @@ def setupdevlog() :
 	initcontime = list(set(initcontime))
 	file.close()
 
+# ==> * EventLog Microsoft-Windows-DriverFrameworks-UserMode%4Operational.evtx Parsing Area *
 def xml_parser(xml_data) :
 	if (xml_data[xml_data.find('<EventID>'):xml_data.find('</EventID>')][-4:] == '2003') or (xml_data[xml_data.find('<EventID>'):xml_data.find('</EventID>')][-4:] == '2100') :
 		print (xml_data)
@@ -273,10 +277,7 @@ def Eventlogload() : # https://github.com/libyal/libevtx/wiki/Development
 
 	evtx_file.close()
 
-
-
 if __name__ == '__main__' :
-
 	global os_release
 	os_release = platform.release()
 	D_classes()
