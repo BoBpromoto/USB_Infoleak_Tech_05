@@ -2,13 +2,12 @@
 # -*- coding: utf-8 -*-
 # -*- coding: cp949 -*-
 
-# @Author : L3ad0xFF
-
 from winreg import *
 import sys
 import os
 import platform
 import pyevtx
+from xml.etree.ElementTree import parse
 
 # ==> * Registry Parsing Area *
 def D_classes() : 
@@ -260,26 +259,47 @@ def setupdevlog() :
 
 # ==> * EventLog Microsoft-Windows-DriverFrameworks-UserMode%4Operational.evtx Parsing Area *
 def xml_parser(xml_data) :
-	if (xml_data[xml_data.find('<EventID>'):xml_data.find('</EventID>')][-4:] == '2003') or (xml_data[xml_data.find('<EventID>'):xml_data.find('</EventID>')][-4:] == '2100') :
-		print (xml_data)
+	if (xml_data[xml_data.find('<EventID>'):xml_data.find('</EventID>')][-4:] == '2003') :
+		evtx_System = xml_data[xml_data.find('<System>') : xml_data.find('</System>')] # event_id, time, userid
+		evtx_UserData = xml_data[xml_data.find('<UserData>') : xml_data.find('</UserData>')] # device name, lifetime
 
+		print ("Event ID : " + xml_data[xml_data.find('<EventID>'):xml_data.find('</EventID>')][-4:])
+		print ("Log Report Time : " + evtx_System[evtx_System.find('<TimeCreated SystemTime='):evtx_System.find('Z"/>')].split('="')[1].replace("T"," "))
+		print ("User ID : " + evtx_System[evtx_System.find('<Security UserID='):].split('"')[1])
+		print ("Device Name : " + evtx_UserData[evtx_UserData.find('instance='):].split("USBSTOR")[1].split("#")[1])
+		print ("Device Serial_Number : " + evtx_UserData[evtx_UserData.find('instance='):].split("USBSTOR")[1].split("#")[2].split("&")[1])
+		print ("lifetime : " + evtx_UserData[evtx_UserData.find('lifetime='):].split('"')[1] + "\n")
+
+	elif (xml_data[xml_data.find('<EventID>'):xml_data.find('</EventID>')][-4:] == '2100') :
+		evtx_System = xml_data[xml_data.find('<System>') : xml_data.find('</System>')] # event_id, time, userid
+		evtx_UserData = xml_data[xml_data.find('<UserData>') : xml_data.find('</UserData>')] # device name, lifetime
+
+		print ("Event ID : " + xml_data[xml_data.find('<EventID>'):xml_data.find('</EventID>')][-4:])
+		print ("Log Report Time : " + evtx_System[evtx_System.find('<TimeCreated SystemTime='):evtx_System.find('Z"/>')].split('="')[1].replace("T"," "))
+		print ("User ID : " + evtx_System[evtx_System.find('<Security UserID='):].split('"')[1])
+		print ("Device Name : " + evtx_UserData[evtx_UserData.find('instance='):].split("USBSTOR")[1].split("#")[1])
+		print ("Device Serial_Number : " + evtx_UserData[evtx_UserData.find('instance='):].split("USBSTOR")[1].split("#")[2].split("&")[1])
+		print ("lifetime : " + evtx_UserData[evtx_UserData.find('lifetime='):].split('"')[1] + "\n")
 
 def Eventlogload() : # https://github.com/libyal/libevtx/wiki/Development
 	file_object = open("C:\Windows\System32\winevt\Logs\Microsoft-Windows-DriverFrameworks-UserMode%4Operational.evtx", "rb")
 	evtx_file = pyevtx.file()
 	evtx_file.open_file_object(file_object)
+	filename = "temp.xml"
 
 	# help(pyevtx.file) # How to use pyevtx
-
+	print ("\n================== * EventLog Contents * ==================")
 	for event_cnt in range (0, evtx_file.number_of_records) :
 		record = evtx_file.get_record(event_cnt)
+		# print (record.xml_string)
 		xml_parser(record.xml_string)
 
 	evtx_file.close()
 
 if __name__ == '__main__' :
-	global os_release
+	global os_release, event_id_2003
 	os_release = platform.release()
+	event_id = list()
 	D_classes()
 	D_classes_1()
 	V_id_P_id()
@@ -287,9 +307,9 @@ if __name__ == '__main__' :
 	Volume_Deivce()
 	VolumeName()
 	setupdevlog()
-	Eventlogload()
 
 	print ("OS System Info : ", end=" ");print (platform.platform())
+	print ("\n================== * Registry Contents * ==================")
 	print ("Device Name : ", end=" "); print (d_class_id)
 	print ("USBSTOR Device Name : ", end=" "); print (stor_d_name)
 	print ("Serial_Number : ", end=" "); print (d_unique_instance_id)
@@ -301,6 +321,10 @@ if __name__ == '__main__' :
 		print ("Mount Volume Name : ", end=" "); print (win10_Volname)
 	else :
 		pass
+	print ("\n================== * Setupapi.dev.log Contents * ==================")
 	print ("Setupapi.dev.log : ", end=" "); print (search4log)
 	print ("Device Install Time : ", end=" "); print(initcontime)
+	
+	Eventlogload()
+	# print ("EventID : ", end=" "); print(event_id_2003)
 
