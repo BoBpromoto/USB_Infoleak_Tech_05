@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 # -*- coding: cp949 -*-
 
+# @ Author L3ad0xFF
+
 from winreg import *
 import sys
 import os
@@ -9,7 +11,7 @@ import platform
 import pyevtx
 import csv
 import datetime
-from linkfile import *
+from LNK_Parser import *
 
 # ==> * Registry Parsing Area *
 def D_classes() : 
@@ -383,19 +385,18 @@ def r_s_e_csv(events) :
 		pass
 
 def linkfile() :
-    # "C:\Users\<username>\AppData\Roaming\Microsoft\Windows\Start Menu" # 시작메뉴
-    # "C:\Users\<username>\AppData\Roaming\Microsoft\Windows\Recent" # 최근문서
-    # "C:\Users\<username>\Desktop" #바탕화면
-    # "C:\Users\<username>\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch" # 빠른실행
-    
-    for (path, dirs, files) in os.walk("C:/"):
-        for filename in files:
-            ext = os.path.splitext(filename)[-1]
-            if (ext == '.lnk') or (ext == '.LNK'):
-                lnkfile = "%s/%s" % (path, filename)
-                print (lnkfile)
-                print(parse_lnk(lnkfile))
+	# "C:\Users\<username>\AppData\Roaming\Microsoft\Windows\Start Menu" # 시작메뉴
+	# "C:\Users\<username>\AppData\Roaming\Microsoft\Windows\Recent" # 최근문서
+	# "C:\Users\<username>\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch" # 빠른실행
+	# "C:\Users\<username>\Desktop" #바탕화면
 
+	for (path, dirs, files) in os.walk("C:\\"):
+		for filename in files:
+			ext = os.path.splitext(filename)[-1]
+			if (ext == '.lnk') or (ext == '.LNK'):
+				lnkfile = "%s/%s" % (path, filename)
+				print (lnkfile)
+				parse_lnk (lnkfile)
 
 if __name__ == '__main__' :
 	global os_release, controlSetinfo
