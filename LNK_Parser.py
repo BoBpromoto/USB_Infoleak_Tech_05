@@ -2,6 +2,8 @@
 # -* encoding : utf-8 *-
 # _* encoding : cp949 *-
 
+# https://github.com/gold1029/pylnker/blob/master/pylnker.py
+
 import sys, datetime, binascii
 import os
 from struct import *
@@ -207,3 +209,5 @@ def parse_lnk(filename):
     f.close()
 
     return lnk_info
+
+    
