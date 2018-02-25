@@ -298,30 +298,6 @@ def xml_parser(xml_data) :
 	else :
 		return 0
 
-
-def Eventlogload() : # https://github.com/libyal/libevtx/wiki/Development
-	global file, csvWriter
-	file_object = open("C:\Windows\System32\winevt\Logs\Microsoft-Windows-DriverFrameworks-UserMode%4Operational.evtx", "rb")
-	evtx_file = pyevtx.file()
-	evtx_file.open_file_object(file_object)
-	file = open("./regi_evtx.csv", 'w', newline = "\n")
-	csvWriter = csv.writer(file)        
-	csvWriter.writerow(['ControlSet', 'Device_Name', 'Serial_Number', 'Mounted_Volume_Name', 'Logical_Drive', 'Init Connected Time', 'Connected Time',
-		'Disconnected Time', 'LifeTime'])
-
-	# help(pyevtx.file) # How to use pyevtx
-	# print ("\n================== * EventLog Contents * ==================")
-	for event_cnt in range (0, evtx_file.number_of_records) :
-		record = evtx_file.get_record(event_cnt)
-		usb_event_log = xml_parser(record.xml_string)
-		if usb_event_log != 0 :
-			# print (usb_event_log, end=" "); print("\n")
-			r_s_e_csv(usb_event_log)
-		else :
-			pass
-	file.close()
-	evtx_file.close()
-
 def regi2dic() :
 	global usb_info
 
@@ -361,7 +337,31 @@ def regi2dic() :
 				initcon_list = list(set(initcon_list))
 				usb_info[controlSetinfo[j]]["Init Connect Time"] = initcon_list
 
+def Eventlogload() : # https://github.com/libyal/libevtx/wiki/Development
+	global file, csvWriter
+	file_object = open("C:\Windows\System32\winevt\Logs\Microsoft-Windows-DriverFrameworks-UserMode%4Operational.evtx", "rb")
+	evtx_file = pyevtx.file()
+	evtx_file.open_file_object(file_object)
+	file = open("./regi_evtx.csv", 'w', newline = "\n")
+	csvWriter = csv.writer(file)        
+	csvWriter.writerow(['ControlSet', 'Device_Name', 'Serial_Number', 'Mounted_Volume_Name', 'Logical_Drive', 'Init Connected Time', 'Connected Time',
+		'Disconnected Time', 'LifeTime'])
+
+	# help(pyevtx.file) # How to use pyevtx
+	# print ("\n================== * EventLog Contents * ==================")
+	for event_cnt in range (0, evtx_file.number_of_records) :
+		record = evtx_file.get_record(event_cnt)
+		usb_event_log = xml_parser(record.xml_string)
+		if usb_event_log != 0 :
+			# print (usb_event_log, end=" "); print("\n")
+			r_s_e_csv(usb_event_log)
+		else :
+			pass
+	file.close()
+	evtx_file.close()
+
 def r_s_e_csv(events) :
+	# linkfile()
 	# print (events, end=" "); print("\n")
 	if events["Event_ID"] == '2003' :
 		for i in range (0, len(controlSetinfo)) :
@@ -390,17 +390,28 @@ def linkfile() :
 	# "C:\Users\<username>\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch" # 빠른실행
 	# "C:\Users\<username>\Desktop" #바탕화면
 
+	lnk_info ={}
+	file1 = open("./LNK_Parse.csv", 'w', newline = "\n")
+	csvWriter1 = csv.writer(file1)
+	csvWriter1.writerow(['Filename', 'Lnk Modified Time', 'Target Create Time', 'Target Accessed Time', 'Target Modified Time', 
+		'Volume Serial', 'Volume ID', 'Local Based Path'])
 	for (path, dirs, files) in os.walk("C:\\"):
 		for filename in files:
 			ext = os.path.splitext(filename)[-1]
 			if (ext == '.lnk') or (ext == '.LNK'):
 				lnkfile = "%s/%s" % (path, filename)
-				print (lnkfile)
-				parse_lnk (lnkfile)
+				lnk_info = parse_lnk(lnkfile)
+				if len(lnk_info) == 8 :
+					csvWriter1.writerow([lnk_info["Filename"], lnk_info["Lnk_Modified_Time"], lnk_info["Create_Time"], lnk_info["Access_Time"], lnk_info["Modified_Time"],
+					lnk_info["Volume Serial"], lnk_info["Volume ID"], lnk_info["Local_Based_Path"]])
+				else :
+					csvWriter1.writerow([lnk_info["Filename"], "", lnk_info["Create_Time"], lnk_info["Access_Time"], lnk_info["Modified_Time"], "",
+					lnk_info["Volume ID"], lnk_info["Local_Based_Path"]])
+	file1.close()
 
 if __name__ == '__main__' :
 	global os_release, controlSetinfo
-	print ("OS System Info : ", end=" ");print (platform.platform())
+	print ("OS System Info : ", end=" "); print (platform.platform())
 	os_release = platform.release()
 	controlSetinfo = list()
 	D_classes()
