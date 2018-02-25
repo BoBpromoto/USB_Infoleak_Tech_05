@@ -2,8 +2,6 @@
 # -* encoding : utf-8 *-
 # _* encoding : cp949 *-
 
-# https://github.com/gold1029/pylnker/blob/master/pylnker.py
-
 import sys, datetime, binascii
 import os
 from struct import *
@@ -141,11 +139,11 @@ def parse_lnk(filename):
         base_path_off = struct_start + 16
 
         vol_flags = read_unpack_bin(f,vol_flags_off,1)
-        print (vol_flags)
 
-        lnk_created_time = datetime.datetime.fromtimestamp(os.path.getctime(filename)).strftime('%Y-%m-%d %H:%M:%S')
-        lnk_modified_time = datetime.datetime.fromtimestamp(os.path.getmtime(filename)).strftime('%Y-%m-%d %H:%M:%S')
-        
+        lnk_time = os.stat(filename)
+        # lnk_created_time = datetime.datetime.fromtimestamp(os.path.getctime(filename)).strftime('%Y-%m-%d %H:%M:%S')
+        lnk_modified_time = datetime.datetime.fromtimestamp(lnk_time.st_mtime).strftime('%Y-%m-%d %H:%M:%S')  
+
         if vol_flags[:2] == '10' :
             # Local volume table
             # Random garbage if bit0 is clear in volume flags
@@ -176,14 +174,14 @@ def parse_lnk(filename):
             # Volume Serial Number
             curr_tab_offset = loc_vol_tab_off + struct_start + 8
             vol_serial = reverse_hex(read_unpack(f,curr_tab_offset,4))
-            print (str(vol_serial))
+            # print (str(vol_serial))
             # output += "Volume Serial: "+str(vol_serial) + "\n"
 
             # Get the location, and length of the volume label 
             vol_label_loc = loc_vol_tab_off + struct_start + 16
             vol_label_len = local_vol_tab_end - vol_label_loc
             vol_label = read_unpack_ascii(f,vol_label_loc,vol_label_len);
-            print(str(vol_label))
+            # print(str(vol_label))
             # output += "Vol Label: "+str(vol_label) + "\n"
 
         local_vol_off = int(reverse_hex(read_unpack(f,local_vol_off,4)),16)
@@ -198,12 +196,14 @@ def parse_lnk(filename):
         local_based_path = None
 
 
-
-    lnk_info = {"Filename" : filename, "LNK_Created_Time" : lnk_created_time, "LNK_Modified_Time" : lnk_modified_time,
-    "Create_Time" : c_time, "Access_Time" : a_time, "Modified_Time" : m_time,"Volume ID" : vol_type_value, "Local_Based_Path" : local_based_path}
+    try :
+        lnk_info = {"Filename" : filename, "Lnk_Modified_Time" : lnk_modified_time, "Create_Time" : c_time, "Access_Time" : a_time, "Modified_Time" : m_time,
+        "Volume Serial" : str(vol_serial), "Volume ID" : vol_type_value, "Local_Based_Path" : local_based_path}
+    except :
+        lnk_info = {"Filename" : filename, "Create_Time" : c_time, "Access_Time" : a_time, "Modified_Time" : m_time,
+        "Volume ID" : vol_type_value, "Local_Based_Path" : local_based_path}
+        pass
     # if ink_info["Volume ID"] in "TEMP"
     f.close()
 
     return lnk_info
-
-    
