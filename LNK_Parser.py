@@ -5,7 +5,9 @@
 # https://github.com/gold1029/pylnker/blob/master/pylnker.py
 
 import sys, datetime, binascii
+import os
 from struct import *
+import datetime
 
 # Hash for Volume types, Lnk_parser result value
 vol_type = {"0":"[DRIVE_UNKNOWN]", "1":"[DRIVE_NO_ROOT_DIR]", "2":"[DRIVE_REMOVABLE]","3":"[DRIVE_FIXED]",
@@ -100,6 +102,7 @@ def add_info(f,loc):
 
 def parse_lnk(filename):
     #read the file in binary module
+    lnk_info = {}
     f = open(filename, 'rb')
     flags = reverse_hex(read_unpack(f,20,4))
 
@@ -133,8 +136,55 @@ def parse_lnk(filename):
         list_end = 78 + items
 
         struct_start = list_end
+        vol_flags_off = struct_start + 8
         local_vol_off = struct_start + 12
         base_path_off = struct_start + 16
+
+        vol_flags = read_unpack_bin(f,vol_flags_off,1)
+        print (vol_flags)
+
+        lnk_created_time = datetime.datetime.fromtimestamp(os.path.getctime(filename)).strftime('%Y-%m-%d %H:%M:%S')
+        lnk_modified_time = datetime.datetime.fromtimestamp(os.path.getmtime(filename)).strftime('%Y-%m-%d %H:%M:%S')
+        
+        if vol_flags[:2] == '10' :
+            # Local volume table
+            # Random garbage if bit0 is clear in volume flags
+        # This is the offset of the local volume table within the 
+        # File Info Location Structure
+            loc_vol_tab_off_hex = reverse_hex(read_unpack(f,local_vol_off,4))
+            loc_vol_tab_off = int(loc_vol_tab_off_hex, 16)
+
+            # This is the asolute start location of the local volume table
+            loc_vol_tab_start = loc_vol_tab_off + struct_start
+
+            # This is the length of the local volume table
+            local_vol_len_hex = reverse_hex(read_unpack(f,loc_vol_tab_off+struct_start,4))
+            local_vol_len = int(local_vol_len_hex, 16)
+
+            # We now have enough info to
+            # Calculate the end of the local volume table.
+            local_vol_tab_end = loc_vol_tab_start + local_vol_len
+
+            # This is the volume type
+            curr_tab_offset = loc_vol_tab_off + struct_start + 4
+            vol_type_hex = reverse_hex(read_unpack(f,curr_tab_offset,4))
+            vol_type_value = int(vol_type_hex, 16)
+            # vol_type_value = int(reverse_hex(read_unpack(f,struct_start + local_vol_off+4,4)),16)
+            vol_type_value = vol_type[str(vol_type_value)]
+            # output += "Volume Type: "+str(vol_type_hash[vol_type]) + "\n"
+
+            # Volume Serial Number
+            curr_tab_offset = loc_vol_tab_off + struct_start + 8
+            vol_serial = reverse_hex(read_unpack(f,curr_tab_offset,4))
+            print (str(vol_serial))
+            # output += "Volume Serial: "+str(vol_serial) + "\n"
+
+            # Get the location, and length of the volume label 
+            vol_label_loc = loc_vol_tab_off + struct_start + 16
+            vol_label_len = local_vol_tab_end - vol_label_loc
+            vol_label = read_unpack_ascii(f,vol_label_loc,vol_label_len);
+            print(str(vol_label))
+            # output += "Vol Label: "+str(vol_label) + "\n"
 
         local_vol_off = int(reverse_hex(read_unpack(f,local_vol_off,4)),16)
         base_path_off = int(reverse_hex(read_unpack(f,base_path_off,4)),16)
@@ -147,7 +197,13 @@ def parse_lnk(filename):
         vol_type_value = None
         local_based_path = None
 
-    print (filename, c_time, a_time, m_time, vol_type_value, local_based_path)
+
+
+    lnk_info = {"Filename" : filename, "LNK_Created_Time" : lnk_created_time, "LNK_Modified_Time" : lnk_modified_time,
+    "Create_Time" : c_time, "Access_Time" : a_time, "Modified_Time" : m_time,"Volume ID" : vol_type_value, "Local_Based_Path" : local_based_path}
+    # if ink_info["Volume ID"] in "TEMP"
     f.close()
+
+    return lnk_info
 
     
